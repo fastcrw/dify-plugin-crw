@@ -1,0 +1,38 @@
+author: "us"
+created_at: "2026-03-26T00:00:00.000000000Z"
+description:
+  en_US: >-
+    CRW — the open-source web scraper built for AI agents.
+    Scrape, crawl, and map websites. Firecrawl-compatible API,
+    5.5x faster, 75x less memory. Self-hosted or fastcrw.com cloud.
+  zh_Hans: >-
+    CRW — 为 AI Agent 打造的开源网页抓取工具。
+    抓取、爬取和映射网站。兼容 Firecrawl API，速度快 5.5 倍，内存占用少 75 倍。
+    支持自托管或 fastcrw.com 云端。
+icon: icon.svg
+label:
+  en_US: CRW
+  zh_Hans: CRW
+meta:
+  arch:
+    - amd64
+    - arm64
+  runner:
+    entrypoint: main
+    language: python
+    version: "3.12"
+  version: 0.0.1
+name: crw
+plugins:
+  tools:
+    - provider/crw.yaml
+resource:
+  memory: 1048576
+  permission:
+    tool:
+      enabled: true
+tags:
+  - search
+  - utilities
+type: plugin
+version: 0.0.1

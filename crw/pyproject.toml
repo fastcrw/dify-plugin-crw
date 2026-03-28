@@ -1,0 +1,9 @@
+[project]
+name = "crw-dify-plugin"
+version = "0.0.1"
+description = "CRW web scraping tool plugin for Dify"
+requires-python = ">=3.12"
+dependencies = [
+    "dify_plugin>=0.3.0,<0.6.0",
+    "requests>=2.31.0,<3.0.0",
+]

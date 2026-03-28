@@ -1,0 +1,49 @@
+identity:
+  name: map
+  author: us
+  label:
+    en_US: Map
+    zh_Hans: URL 映射
+  description:
+    human:
+      en_US: Discover all URLs on a website using link extraction and sitemap parsing.
+      zh_Hans: 通过链接提取和站点地图解析发现网站上的所有 URL。
+    llm: >-
+      Discover all URLs on a website. Combines link extraction with sitemap.xml
+      parsing to build a complete URL map.
+
+parameters:
+  - name: url
+    type: string
+    required: true
+    form: llm
+    label:
+      en_US: URL
+      zh_Hans: URL
+    llm_description: The website URL to discover links from. Required.
+
+  - name: maxDepth
+    type: number
+    required: false
+    form: form
+    default: 2
+    min: 0
+    label:
+      en_US: Max Depth
+      zh_Hans: 最大深度
+
+  - name: useSitemap
+    type: boolean
+    required: false
+    form: form
+    default: true
+    label:
+      en_US: Use Sitemap
+      zh_Hans: 使用站点地图
+    human_description:
+      en_US: Also read and parse sitemap.xml for URL discovery.
+      zh_Hans: 同时读取并解析 sitemap.xml 以发现 URL。
+
+extra:
+  python:
+    source: tools/map.py

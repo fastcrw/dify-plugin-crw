@@ -1,0 +1,45 @@
+identity:
+  name: crawl_status
+  author: us
+  label:
+    en_US: Crawl Status
+    zh_Hans: 爬取状态
+  description:
+    human:
+      en_US: Check the status of a crawl job or cancel it.
+      zh_Hans: 查询爬取任务状态或取消任务。
+    llm: >-
+      Check the status of an async crawl job by its ID.
+      Can also cancel a running crawl job.
+
+parameters:
+  - name: job_id
+    type: string
+    required: true
+    form: llm
+    label:
+      en_US: Job ID
+      zh_Hans: 任务 ID
+    llm_description: The crawl job ID returned by the crawl tool.
+
+  - name: action
+    type: select
+    required: false
+    form: form
+    default: status
+    label:
+      en_US: Action
+      zh_Hans: 操作
+    options:
+      - value: status
+        label:
+          en_US: Check Status
+          zh_Hans: 查询状态
+      - value: cancel
+        label:
+          en_US: Cancel Job
+          zh_Hans: 取消任务
+
+extra:
+  python:
+    source: tools/crawl_status.py

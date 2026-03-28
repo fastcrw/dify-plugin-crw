@@ -1,0 +1,89 @@
+identity:
+  name: crawl
+  author: us
+  label:
+    en_US: Crawl
+    zh_Hans: 深度爬取
+  description:
+    human:
+      en_US: Start an async BFS crawl from a URL. Returns a job ID for status polling.
+      zh_Hans: 从 URL 开始异步 BFS 爬取。返回任务 ID 用于状态查询。
+    llm: >-
+      Start a web crawl from a given URL. Crawls pages following links up to
+      maxDepth and maxPages limits. Returns a job ID that can be polled for results.
+
+parameters:
+  - name: url
+    type: string
+    required: true
+    form: llm
+    label:
+      en_US: Start URL
+      zh_Hans: 起始 URL
+    llm_description: The URL to start crawling from. Required.
+
+  - name: wait_for_results
+    type: boolean
+    required: false
+    form: form
+    default: true
+    label:
+      en_US: Wait For Results
+      zh_Hans: 等待爬取结果
+    human_description:
+      en_US: >-
+        If true, poll until crawl completes (may take minutes for large sites).
+        If false, return job ID immediately for async polling.
+      zh_Hans: >-
+        为 true 时等待爬取完成（大型站点可能需要数分钟）。
+        为 false 时立即返回任务 ID 用于异步查询。
+
+  - name: maxDepth
+    type: number
+    required: false
+    form: form
+    default: 2
+    min: 0
+    label:
+      en_US: Max Depth
+      zh_Hans: 最大深度
+    human_description:
+      en_US: Maximum link-follow depth from the start URL. 0 = scrape only the start URL.
+      zh_Hans: 从起始 URL 开始的最大链接跟随深度。0 = 仅抓取起始 URL。
+
+  - name: maxPages
+    type: number
+    required: false
+    form: form
+    default: 100
+    min: 1
+    label:
+      en_US: Max Pages
+      zh_Hans: 最大页面数
+    human_description:
+      en_US: Maximum number of pages to crawl before stopping.
+      zh_Hans: 爬取的最大页面数。
+
+  - name: formats
+    type: string
+    required: false
+    form: form
+    label:
+      en_US: Output Formats
+      zh_Hans: 输出格式
+    human_description:
+      en_US: "Comma-separated formats for each page: markdown, html, rawHtml, plainText, links"
+      zh_Hans: "逗号分隔的每页输出格式：markdown, html, rawHtml, plainText, links"
+
+  - name: onlyMainContent
+    type: boolean
+    required: false
+    form: form
+    default: true
+    label:
+      en_US: Only Main Content
+      zh_Hans: 仅主要内容
+
+extra:
+  python:
+    source: tools/crawl.py

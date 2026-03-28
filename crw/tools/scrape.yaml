@@ -1,0 +1,171 @@
+identity:
+  name: scrape
+  author: us
+  label:
+    en_US: Scrape
+    zh_Hans: 单页抓取
+  description:
+    human:
+      en_US: Scrape a URL and return clean content as markdown, HTML, plain text, or structured JSON.
+      zh_Hans: 抓取 URL 并返回 markdown、HTML、纯文本或结构化 JSON 格式的干净内容。
+    llm: >-
+      Scrape a single URL and extract its content. Returns markdown by default.
+      Supports JS rendering, CSS selectors, XPath, and LLM-based structured extraction.
+
+parameters:
+  - name: url
+    type: string
+    required: true
+    form: llm
+    label:
+      en_US: URL
+      zh_Hans: URL
+    human_description:
+      en_US: The URL to scrape.
+      zh_Hans: 要抓取的 URL。
+    llm_description: The URL of the webpage to scrape. Required.
+
+  - name: formats
+    type: string
+    required: false
+    form: form
+    label:
+      en_US: Output Formats
+      zh_Hans: 输出格式
+    human_description:
+      en_US: "Comma-separated output formats: markdown, html, rawHtml, plainText, links, json"
+      zh_Hans: "逗号分隔的输出格式：markdown, html, rawHtml, plainText, links, json"
+    placeholder:
+      en_US: "markdown"
+
+  - name: onlyMainContent
+    type: boolean
+    required: false
+    form: form
+    default: true
+    label:
+      en_US: Only Main Content
+      zh_Hans: 仅主要内容
+    human_description:
+      en_US: Strip navigation, footer, sidebar, and other boilerplate.
+      zh_Hans: 去除导航栏、页脚、侧边栏等模板内容。
+
+  - name: renderJs
+    type: boolean
+    required: false
+    form: form
+    label:
+      en_US: Render JavaScript
+      zh_Hans: 渲染 JavaScript
+    human_description:
+      en_US: "Force JS rendering. Leave unchecked for auto-detection."
+      zh_Hans: "强制 JS 渲染。不勾选则自动检测。"
+
+  - name: waitFor
+    type: number
+    required: false
+    form: form
+    min: 0
+    default: 0
+    label:
+      en_US: Wait (ms)
+      zh_Hans: 等待时间（毫秒）
+    human_description:
+      en_US: Milliseconds to wait after JS rendering before extracting content.
+      zh_Hans: JS 渲染后等待的毫秒数。
+
+  - name: cssSelector
+    type: string
+    required: false
+    form: form
+    label:
+      en_US: CSS Selector
+      zh_Hans: CSS 选择器
+    human_description:
+      en_US: "Extract only elements matching this CSS selector (e.g. article.post-content)."
+      zh_Hans: "仅提取匹配此 CSS 选择器的元素。"
+
+  - name: xpath
+    type: string
+    required: false
+    form: form
+    label:
+      en_US: XPath
+      zh_Hans: XPath
+    human_description:
+      en_US: "Extract only elements matching this XPath expression."
+      zh_Hans: "仅提取匹配此 XPath 表达式的元素。"
+
+  - name: includeTags
+    type: string
+    required: false
+    form: form
+    label:
+      en_US: Include Tags
+      zh_Hans: 包含标签
+    human_description:
+      en_US: "Comma-separated CSS selectors to include. Example: .content, #main"
+      zh_Hans: "逗号分隔的 CSS 选择器。示例：.content, #main"
+
+  - name: excludeTags
+    type: string
+    required: false
+    form: form
+    label:
+      en_US: Exclude Tags
+      zh_Hans: 排除标签
+    human_description:
+      en_US: "Comma-separated CSS selectors to exclude. Example: .ad, #footer"
+      zh_Hans: "逗号分隔的 CSS 选择器。示例：.ad, #footer"
+
+  - name: headers
+    type: string
+    required: false
+    form: form
+    label:
+      en_US: Custom Headers
+      zh_Hans: 自定义请求头
+    human_description:
+      en_US: 'JSON object of custom HTTP headers. Example: {"Cookie": "session=abc"}'
+      zh_Hans: '自定义 HTTP 请求头的 JSON 对象。'
+
+  - name: stealth
+    type: boolean
+    required: false
+    form: form
+    label:
+      en_US: Stealth Mode
+      zh_Hans: 隐身模式
+    human_description:
+      en_US: Inject browser-like headers and rotate User-Agent to reduce bot detection.
+      zh_Hans: 注入浏览器请求头并轮换 User-Agent 以减少机器人检测。
+
+  - name: proxy
+    type: string
+    required: false
+    form: form
+    label:
+      en_US: Proxy URL
+      zh_Hans: 代理 URL
+    human_description:
+      en_US: "Per-request proxy URL. Example: http://user:pass@proxy:8080"
+      zh_Hans: "每请求代理 URL。示例：http://user:pass@proxy:8080"
+
+  - name: jsonSchema
+    type: string
+    required: false
+    form: form
+    label:
+      en_US: JSON Schema (LLM Extraction)
+      zh_Hans: JSON Schema（LLM 提取）
+    human_description:
+      en_US: >-
+        JSON Schema for LLM-based structured extraction.
+        Requires LLM config on the CRW server. Returns data in the "json" format.
+      zh_Hans: >-
+        用于 LLM 结构化提取的 JSON Schema。
+        需要在 CRW 服务器上配置 LLM。数据以 "json" 格式返回。
+
+extra:
+  python:
+    source: tools/scrape.py
