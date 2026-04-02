@@ -67,6 +67,10 @@ class CrwClient:
     def cancel_crawl(self, job_id: str) -> dict[str, Any]:
         return self._request("DELETE", f"/v1/crawl/{job_id}")
 
+    def search(self, query: str, **kwargs: Any) -> dict[str, Any]:
+        """Search the web. Cloud-only feature."""
+        return self._request("POST", "/v1/search", {"query": query, **kwargs})
+
     def map(self, url: str, **kwargs: Any) -> dict[str, Any]:
         return self._request("POST", "/v1/map", {"url": url, **kwargs})
 

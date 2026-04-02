@@ -1,0 +1,75 @@
+identity:
+  name: search
+  author: us
+  label:
+    en_US: Search
+    zh_Hans: 搜索
+  description:
+    human:
+      en_US: Search the web and return relevant results. Cloud-only feature — requires fastcrw.com API key.
+    llm: Search the web for a query and return results with titles, URLs, descriptions, and optionally scraped content. Cloud-only feature.
+
+parameters:
+  - name: query
+    type: string
+    required: true
+    form: llm
+    label:
+      en_US: Query
+    llm_description: The search query to find web content. Required.
+
+  - name: limit
+    type: number
+    required: false
+    form: form
+    default: 5
+    label:
+      en_US: Limit
+    human_description:
+      en_US: Maximum number of results (1-20)
+
+  - name: lang
+    type: string
+    required: false
+    form: form
+    label:
+      en_US: Language
+    human_description:
+      en_US: "Language code (e.g. en, tr, de)"
+
+  - name: tbs
+    type: select
+    required: false
+    form: form
+    label:
+      en_US: Time Filter
+    options:
+      - value: "qdr:h"
+        label:
+          en_US: Past Hour
+      - value: "qdr:d"
+        label:
+          en_US: Past Day
+      - value: "qdr:w"
+        label:
+          en_US: Past Week
+      - value: "qdr:m"
+        label:
+          en_US: Past Month
+      - value: "qdr:y"
+        label:
+          en_US: Past Year
+
+  - name: scrapeResults
+    type: boolean
+    required: false
+    form: form
+    default: false
+    label:
+      en_US: Scrape Results
+    human_description:
+      en_US: Also scrape each result URL for full content (costs additional credits)
+
+extra:
+  python:
+    source: tools/search.py

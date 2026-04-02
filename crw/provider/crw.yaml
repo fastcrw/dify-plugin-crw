@@ -54,6 +54,7 @@ tools:
   - tools/crawl.yaml
   - tools/crawl_status.yaml
   - tools/map.yaml
+  - tools/search.yaml
 
 extra:
   python:
