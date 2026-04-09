@@ -74,14 +74,19 @@ class CrwClient:
     def map(self, url: str, **kwargs: Any) -> dict[str, Any]:
         return self._request("POST", "/v1/map", {"url": url, **kwargs})
 
-    def poll_crawl(self, job_id: str, interval: int = 5) -> dict[str, Any]:
-        while True:
+    def poll_crawl(
+        self, job_id: str, interval: int = 5, max_wait: int = 300
+    ) -> dict[str, Any]:
+        elapsed = 0
+        while elapsed < max_wait:
             status = self.crawl_status(job_id)
             if status.get("status") == "completed":
                 return status
             if status.get("status") == "failed":
                 raise HTTPError(f"Crawl failed: {status.get('error', 'unknown')}")
             time.sleep(interval)
+            elapsed += interval
+        raise TimeoutError(f"Crawl {job_id} did not complete within {max_wait}s")
 
 
 def get_array_params(params: dict[str, Any], key: str) -> list[str] | None:
