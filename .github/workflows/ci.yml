@@ -20,8 +20,9 @@ jobs:
       # parameter helpers. A malformed tool yaml makes the plugin exit(1) at
       # startup, which users only ever see as "Runtime exited with error".
       # Needs no API key.
-      - run: uv run python -m pytest tests/test_manifest.py tests/test_params.py -v
-        working-directory: crw
+      # Call the venv python directly: `uv run` inside crw/ would see its
+      # pyproject.toml and build a second, empty environment.
+      - run: cd crw && ../.venv/bin/python -m pytest tests/test_manifest.py tests/test_params.py -v
 
   marketplace:
     # The gates the Dify Marketplace pre-check applies, run here so a submission
@@ -57,7 +58,6 @@ jobs:
       - run: uv venv
       - run: uv pip install -r crw/requirements.txt
       - run: uv pip install pytest pyyaml
-      - run: uv run python -m pytest tests/ -v
-        working-directory: crw
+      - run: cd crw && ../.venv/bin/python -m pytest tests/ -v
         env:
           CRW_API_KEY: ${{ secrets.CRW_API_KEY }}
