@@ -1,4 +1,5 @@
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 
 from dify_plugin import Tool
 from dify_plugin.entities.tool import ToolInvokeMessage
@@ -23,11 +24,15 @@ class CrawlStatusTool(Tool):
             yield self.create_text_message(f"Crawl job {job_id} cancelled.")
         else:
             result = client.crawl_status(job_id)
-            status = result.get("status", "unknown")
-            total = result.get("total", 0)
-            completed = result.get("completed", 0)
             yield self.create_text_message(
-                f"Crawl {job_id}: {status} ({completed}/{total} pages)"
+                f"Crawl {job_id}: {result.get('status', 'unknown')} "
+                f"({result.get('completed', 0)}/{result.get('total', 0)} pages)"
             )
 
         yield self.create_json_message(result)
+
+        yield self.create_variable_message("jobId", job_id)
+        yield self.create_variable_message("status", result.get("status") or "unknown")
+        yield self.create_variable_message("pages", result.get("data") or [])
+        yield self.create_variable_message("total", result.get("total", 0))
+        yield self.create_variable_message("completed", result.get("completed", 0))

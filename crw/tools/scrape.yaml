@@ -4,13 +4,16 @@ identity:
   label:
     en_US: Scrape
     zh_Hans: 单页抓取
-  description:
-    human:
-      en_US: Scrape a URL and return clean content as markdown, HTML, plain text, or structured JSON.
-      zh_Hans: 抓取 URL 并返回 markdown、HTML、纯文本或结构化 JSON 格式的干净内容。
-    llm: >-
-      Scrape a single URL and extract its content. Returns markdown by default.
-      Supports JS rendering, CSS selectors, XPath, and LLM-based structured extraction.
+
+description:
+  human:
+    en_US: Read one web page and return clean content as markdown, HTML, plain text, or structured JSON.
+    zh_Hans: 读取单个网页，返回 markdown、HTML、纯文本或结构化 JSON 格式的干净内容。
+  llm: >-
+    Fetch the content of one specific web page whose URL you already know.
+    Returns clean markdown. If you do not have a URL yet, use search first.
+    To read many pages of the same site, use crawl. To pull structured fields
+    from several pages at once, use extract.
 
 parameters:
   - name: url
@@ -23,20 +26,24 @@ parameters:
     human_description:
       en_US: The URL to scrape.
       zh_Hans: 要抓取的 URL。
-    llm_description: The URL of the webpage to scrape. Required.
+    llm_description: >-
+      The exact URL of the page to read, including the scheme, for example
+      https://example.com/docs/intro
 
   - name: formats
     type: string
     required: false
-    form: form
+    form: llm
     label:
       en_US: Output Formats
       zh_Hans: 输出格式
     human_description:
-      en_US: "Comma-separated output formats: markdown, html, rawHtml, plainText, links, json"
-      zh_Hans: "逗号分隔的输出格式：markdown, html, rawHtml, plainText, links, json"
-    placeholder:
-      en_US: "markdown"
+      en_US: "Comma-separated: markdown, html, rawHtml, plainText, links, images, json, summary, screenshot. Defaults to markdown."
+      zh_Hans: "逗号分隔：markdown, html, rawHtml, plainText, links, images, json, summary, screenshot。默认 markdown。"
+    llm_description: >-
+      Comma-separated output formats. Use markdown to read a page, links when you
+      only need the URLs it points to, json together with jsonSchema or prompt for
+      structured fields, summary for a short LLM summary. Defaults to markdown.
 
   - name: onlyMainContent
     type: boolean
@@ -49,6 +56,36 @@ parameters:
     human_description:
       en_US: Strip navigation, footer, sidebar, and other boilerplate.
       zh_Hans: 去除导航栏、页脚、侧边栏等模板内容。
+
+  - name: prompt
+    type: string
+    required: false
+    form: form
+    label:
+      en_US: Extraction Prompt
+      zh_Hans: 提取提示词
+    human_description:
+      en_US: >-
+        Plain-language description of the facts to pull from the page. Requests the
+        json format automatically. Uses a managed LLM and needs a paid plan.
+      zh_Hans: >-
+        用自然语言描述要从页面中提取的信息。会自动请求 json 格式。
+        使用托管 LLM，需要付费套餐。
+
+  - name: jsonSchema
+    type: string
+    required: false
+    form: form
+    label:
+      en_US: JSON Schema
+      zh_Hans: JSON Schema
+    human_description:
+      en_US: >-
+        JSON Schema constraining structured extraction. Requests the json format
+        automatically. Uses a managed LLM and needs a paid plan.
+      zh_Hans: >-
+        用于约束结构化提取的 JSON Schema。会自动请求 json 格式。
+        使用托管 LLM，需要付费套餐。
 
   - name: renderJs
     type: boolean
@@ -66,13 +103,25 @@ parameters:
     required: false
     form: form
     min: 0
-    default: 0
     label:
       en_US: Wait (ms)
       zh_Hans: 等待时间（毫秒）
     human_description:
       en_US: Milliseconds to wait after JS rendering before extracting content.
-      zh_Hans: JS 渲染后等待的毫秒数。
+      zh_Hans: JS 渲染后提取内容前等待的毫秒数。
+
+  - name: timeout
+    type: number
+    required: false
+    form: form
+    min: 1000
+    max: 60000
+    label:
+      en_US: Timeout (ms)
+      zh_Hans: 超时（毫秒）
+    human_description:
+      en_US: "End-to-end budget for this scrape in milliseconds, up to 60000. Server default is used when empty."
+      zh_Hans: "本次抓取的端到端预算（毫秒），最大 60000。留空则使用服务器默认值。"
 
   - name: cssSelector
     type: string
@@ -82,19 +131,8 @@ parameters:
       en_US: CSS Selector
       zh_Hans: CSS 选择器
     human_description:
-      en_US: "Extract only elements matching this CSS selector (e.g. article.post-content)."
-      zh_Hans: "仅提取匹配此 CSS 选择器的元素。"
-
-  - name: xpath
-    type: string
-    required: false
-    form: form
-    label:
-      en_US: XPath
-      zh_Hans: XPath
-    human_description:
-      en_US: "Extract only elements matching this XPath expression."
-      zh_Hans: "仅提取匹配此 XPath 表达式的元素。"
+      en_US: "Extract only elements matching this CSS selector, for example article.post-content"
+      zh_Hans: "仅提取匹配此 CSS 选择器的元素，例如 article.post-content"
 
   - name: includeTags
     type: string
@@ -104,8 +142,8 @@ parameters:
       en_US: Include Tags
       zh_Hans: 包含标签
     human_description:
-      en_US: "Comma-separated CSS selectors to include. Example: .content, #main"
-      zh_Hans: "逗号分隔的 CSS 选择器。示例：.content, #main"
+      en_US: "Comma-separated CSS selectors to keep. Example: .content, #main"
+      zh_Hans: "逗号分隔的要保留的 CSS 选择器。示例：.content, #main"
 
   - name: excludeTags
     type: string
@@ -115,8 +153,8 @@ parameters:
       en_US: Exclude Tags
       zh_Hans: 排除标签
     human_description:
-      en_US: "Comma-separated CSS selectors to exclude. Example: .ad, #footer"
-      zh_Hans: "逗号分隔的 CSS 选择器。示例：.ad, #footer"
+      en_US: "Comma-separated CSS selectors to drop. Example: .ad, #footer"
+      zh_Hans: "逗号分隔的要移除的 CSS 选择器。示例：.ad, #footer"
 
   - name: headers
     type: string
@@ -127,44 +165,48 @@ parameters:
       zh_Hans: 自定义请求头
     human_description:
       en_US: 'JSON object of custom HTTP headers. Example: {"Cookie": "session=abc"}'
-      zh_Hans: '自定义 HTTP 请求头的 JSON 对象。'
+      zh_Hans: '自定义 HTTP 请求头的 JSON 对象。示例：{"Cookie": "session=abc"}'
 
-  - name: stealth
-    type: boolean
-    required: false
-    form: form
-    label:
-      en_US: Stealth Mode
-      zh_Hans: 隐身模式
-    human_description:
-      en_US: Inject browser-like headers and rotate User-Agent to reduce bot detection.
-      zh_Hans: 注入浏览器请求头并轮换 User-Agent 以减少机器人检测。
-
-  - name: proxy
+  - name: country
     type: string
     required: false
     form: form
     label:
-      en_US: Proxy URL
-      zh_Hans: 代理 URL
+      en_US: Country
+      zh_Hans: 国家
     human_description:
-      en_US: "Per-request proxy URL. Example: http://user:pass@proxy:8080"
-      zh_Hans: "每请求代理 URL。示例：http://user:pass@proxy:8080"
+      en_US: "Two-letter ISO country code to egress from, for example us or de. Server default when empty."
+      zh_Hans: "两位 ISO 国家代码，例如 us 或 de。留空则使用服务器默认值。"
 
-  - name: jsonSchema
-    type: string
-    required: false
-    form: form
-    label:
-      en_US: JSON Schema (LLM Extraction)
-      zh_Hans: JSON Schema（LLM 提取）
-    human_description:
-      en_US: >-
-        JSON Schema for LLM-based structured extraction.
-        Requires LLM config on the CRW server. Returns data in the "json" format.
-      zh_Hans: >-
-        用于 LLM 结构化提取的 JSON Schema。
-        需要在 CRW 服务器上配置 LLM。数据以 "json" 格式返回。
+output_schema:
+  type: object
+  properties:
+    markdown:
+      type: string
+      description: The page content as clean markdown
+    html:
+      type: string
+      description: The page content as cleaned HTML, when the html format was requested
+    links:
+      type: array
+      description: URLs found on the page, when the links format was requested
+      items:
+        type: string
+    json:
+      type: object
+      description: Structured extraction result, when jsonSchema or prompt was used
+    summary:
+      type: string
+      description: LLM summary of the page, when the summary format was requested
+    title:
+      type: string
+      description: The page title
+    sourceUrl:
+      type: string
+      description: The final URL after redirects
+    statusCode:
+      type: number
+      description: HTTP status code of the fetch
 
 extra:
   python:

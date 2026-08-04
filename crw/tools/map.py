@@ -1,9 +1,10 @@
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 
 from dify_plugin import Tool
 from dify_plugin.entities.tool import ToolInvokeMessage
 
-from .crw_client import CrwClient
+from .crw_client import CrwClient, as_int
 
 
 class MapTool(Tool):
@@ -16,17 +17,22 @@ class MapTool(Tool):
         )
 
         payload: dict[str, Any] = {}
-        if tool_parameters.get("maxDepth") is not None:
-            payload["maxDepth"] = tool_parameters["maxDepth"]
-        if tool_parameters.get("useSitemap") is not None:
-            payload["useSitemap"] = tool_parameters["useSitemap"]
+        for key in ("maxDepth", "limit", "timeout"):
+            value = as_int(tool_parameters, key)
+            if value is not None:
+                payload[key] = value
+        for key in ("useSitemap", "crawlFallback", "ignoreQueryParameters"):
+            if tool_parameters.get(key) is not None:
+                payload[key] = tool_parameters[key]
 
         result = client.map(url=tool_parameters["url"], **payload)
 
-        links = result.get("data", {}).get("links", [])
-        yield self.create_text_message(
-            f"Found {len(links)} URLs:\n"
-            + "\n".join(links[:50])
-            + (f"\n... and {len(links) - 50} more" if len(links) > 50 else "")
-        )
+        links = (result.get("data") or {}).get("links") or []
+        preview = "\n".join(links[:50])
+        more = f"\n... and {len(links) - 50} more" if len(links) > 50 else ""
+        yield self.create_text_message(f"Found {len(links)} URLs:\n{preview}{more}")
+
         yield self.create_json_message(result)
+
+        yield self.create_variable_message("links", links)
+        yield self.create_variable_message("count", len(links))

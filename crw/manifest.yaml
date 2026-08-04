@@ -2,17 +2,19 @@ author: "us"
 created_at: "2026-03-26T00:00:00.000000000Z"
 description:
   en_US: >-
-    CRW — the open-source web scraper built for AI agents.
-    Scrape, crawl, and map websites. Firecrawl-compatible API,
-    5.5x faster, 75x less memory. Self-hosted or fastcrw.com cloud.
+    fastCRW, the open-source web data API built for AI agents.
+    Scrape, crawl, map, and search the web. Runs on the fastcrw.com
+    cloud, or self-host the single 8 MB binary.
   zh_Hans: >-
-    CRW — 为 AI Agent 打造的开源网页抓取工具。
-    抓取、爬取和映射网站。兼容 Firecrawl API，速度快 5.5 倍，内存占用少 75 倍。
-    支持自托管或 fastcrw.com 云端。
+    fastCRW，为 AI Agent 打造的开源网页数据 API。
+    抓取、爬取、映射和搜索网页。可使用 fastcrw.com 云端服务，
+    或自托管仅 8 MB 的单一二进制文件。
 icon: icon.svg
 label:
-  en_US: CRW
-  zh_Hans: CRW
+  en_US: fastCRW
+  zh_Hans: fastCRW
+privacy: PRIVACY.md
+repo: https://github.com/us/dify-plugin-crw
 meta:
   arch:
     - amd64
@@ -21,6 +23,7 @@ meta:
     entrypoint: main
     language: python
     version: "3.12"
+  # Manifest SPEC version, not the plugin version. Every reference plugin pins 0.0.1.
   version: 0.0.1
 name: crw
 plugins:
@@ -28,11 +31,9 @@ plugins:
     - provider/crw.yaml
 resource:
   memory: 1048576
-  permission:
-    tool:
-      enabled: true
+  permission: {}
 tags:
   - search
   - utilities
 type: plugin
-version: 0.0.1
+version: 0.1.0

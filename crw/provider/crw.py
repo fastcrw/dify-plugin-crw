@@ -2,7 +2,6 @@ from typing import Any
 
 from dify_plugin import ToolProvider
 from dify_plugin.errors.tool import ToolProviderCredentialValidationError
-
 from tools.crw_client import CrwClient
 
 
@@ -13,6 +12,6 @@ class CrwProvider(ToolProvider):
                 api_key=credentials["api_key"],
                 base_url=credentials.get("base_url"),
             )
-            client.scrape(url="https://example.com", formats=["markdown"])
+            client.capabilities()
         except Exception as e:
-            raise ToolProviderCredentialValidationError(str(e))
+            raise ToolProviderCredentialValidationError(str(e)) from e

@@ -4,10 +4,15 @@ identity:
   label:
     en_US: Search
     zh_Hans: 搜索
-  description:
-    human:
-      en_US: Search the web and return relevant results. Cloud-only feature — requires fastcrw.com API key.
-    llm: Search the web for a query and return results with titles, URLs, descriptions, and optionally scraped content. Cloud-only feature.
+
+description:
+  human:
+    en_US: Search the web and return relevant results, optionally scraping each one or synthesising an answer.
+    zh_Hans: 搜索网页并返回相关结果，可选择抓取每条结果或综合生成答案。
+  llm: >-
+    Search the web and get back result titles, URLs and short snippets. Use when
+    you do not know which page holds the answer. Turn on scrapeResults only when
+    the snippets will not be enough, as it costs a credit per result.
 
 parameters:
   - name: query
@@ -16,59 +21,183 @@ parameters:
     form: llm
     label:
       en_US: Query
-    llm_description: The search query to find web content. Required.
+      zh_Hans: 查询
+    human_description:
+      en_US: "The search query. Supports the site: operator to restrict to one domain."
+      zh_Hans: "搜索查询词。支持 site: 操作符以限定单个域名。"
+    llm_description: >-
+      The search query, phrased the way you would type it into a search engine.
+      Keep it short and keyword-led rather than a full sentence. To restrict the
+      search to one site, prefix it with the site: operator, for example
+      "site:docs.python.org asyncio".
 
   - name: limit
     type: number
     required: false
-    form: form
-    default: 5
+    form: llm
+    min: 1
     label:
-      en_US: Limit
+      en_US: Result Limit
+      zh_Hans: 结果数量
     human_description:
-      en_US: Maximum number of results (1-20)
-
-  - name: lang
-    type: string
-    required: false
-    form: form
-    label:
-      en_US: Language
-    human_description:
-      en_US: "Language code (e.g. en, tr, de)"
+      en_US: Maximum number of results to return.
+      zh_Hans: 返回结果的最大数量。
+    llm_description: How many results to return. Ask for more only when one answer will not settle the question.
 
   - name: tbs
     type: select
     required: false
-    form: form
+    form: llm
     label:
       en_US: Time Filter
+      zh_Hans: 时间筛选
+    human_description:
+      en_US: Restrict results to a recent time window.
+      zh_Hans: 将结果限制在最近的时间范围内。
+    llm_description: >-
+      Restrict results by recency. Use qdr:d for the last day, qdr:w for the last
+      week, qdr:m for the last month. Leave empty unless the question is about
+      recent events.
     options:
       - value: "qdr:h"
         label:
           en_US: Past Hour
+          zh_Hans: 过去一小时
       - value: "qdr:d"
         label:
           en_US: Past Day
+          zh_Hans: 过去一天
       - value: "qdr:w"
         label:
           en_US: Past Week
+          zh_Hans: 过去一周
       - value: "qdr:m"
         label:
           en_US: Past Month
+          zh_Hans: 过去一个月
       - value: "qdr:y"
         label:
           en_US: Past Year
+          zh_Hans: 过去一年
+
+  - name: lang
+    type: string
+    required: false
+    form: llm
+    label:
+      en_US: Language
+      zh_Hans: 语言
+    human_description:
+      en_US: "Language code for results, for example en or de."
+      zh_Hans: "结果语言代码，例如 en 或 de。"
+    llm_description: >-
+      Two-letter language code for the results, for example en, de, tr. Set it
+      when the user asks in or about a specific language.
+
+  - name: sources
+    type: string
+    required: false
+    form: llm
+    label:
+      en_US: Sources
+      zh_Hans: 来源
+    human_description:
+      en_US: "Comma-separated: web, news, images. Defaults to web."
+      zh_Hans: "逗号分隔：web, news, images。默认 web。"
+    llm_description: >-
+      Comma-separated result types: web, news, images. Use news for current
+      events and images when the user wants pictures. Defaults to web.
+
+  - name: categories
+    type: string
+    required: false
+    form: llm
+    label:
+      en_US: Categories
+      zh_Hans: 类别
+    human_description:
+      en_US: "Comma-separated: github, research, pdf."
+      zh_Hans: "逗号分隔：github, research, pdf。"
+    llm_description: >-
+      Comma-separated topic filters: github for code and repositories, research
+      for academic papers, pdf for documents. Leave empty for a general search.
 
   - name: scrapeResults
     type: boolean
     required: false
     form: form
-    default: false
     label:
       en_US: Scrape Results
+      zh_Hans: 抓取结果
     human_description:
-      en_US: Also scrape each result URL for full content (costs additional credits)
+      en_US: Also fetch the full content of each result. Costs one credit per result.
+      zh_Hans: 同时抓取每条结果的完整内容。每条结果消耗一个积分。
+
+  - name: answer
+    type: boolean
+    required: false
+    form: form
+    label:
+      en_US: Synthesise Answer
+      zh_Hans: 综合答案
+    human_description:
+      en_US: >-
+        Generate one cited answer from the top results. Turns on result scraping
+        automatically. Uses a managed LLM and needs a paid plan.
+      zh_Hans: >-
+        根据排名靠前的结果生成一个带引用的答案。会自动开启结果抓取。
+        使用托管 LLM，需要付费套餐。
+
+  - name: summarizeResults
+    type: boolean
+    required: false
+    form: form
+    label:
+      en_US: Summarise Each Result
+      zh_Hans: 逐条摘要
+    human_description:
+      en_US: >-
+        Attach an LLM summary to every result. Turns on result scraping
+        automatically. Uses a managed LLM and needs a paid plan.
+      zh_Hans: >-
+        为每条结果附加 LLM 摘要。会自动开启结果抓取。
+        使用托管 LLM，需要付费套餐。
+
+output_schema:
+  type: object
+  properties:
+    results:
+      type: array
+      description: The search results
+      items:
+        type: object
+        properties:
+          url:
+            type: string
+            description: Result URL
+          title:
+            type: string
+            description: Result title
+          description:
+            type: string
+            description: Result snippet
+          markdown:
+            type: string
+            description: Page content, when scrapeResults was on
+          summary:
+            type: string
+            description: LLM summary, when summarizeResults was on
+    answer:
+      type: string
+      description: Synthesised answer, when answer was on
+    urls:
+      type: array
+      description: Just the result URLs, in order
+      items:
+        type: string
+    count:
+      type: number
+      description: Number of results returned
 
 extra:
   python:
