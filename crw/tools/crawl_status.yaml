@@ -4,13 +4,14 @@ identity:
   label:
     en_US: Crawl Status
     zh_Hans: 爬取状态
-  description:
-    human:
-      en_US: Check the status of a crawl job or cancel it.
-      zh_Hans: 查询爬取任务状态或取消任务。
-    llm: >-
-      Check the status of an async crawl job by its ID.
-      Can also cancel a running crawl job.
+
+description:
+  human:
+    en_US: Check the status of a crawl job and get its pages, or cancel it.
+    zh_Hans: 查询爬取任务的状态并获取页面，或取消任务。
+  llm: >-
+    Check whether a crawl job has finished and get its pages. Only call this with
+    an id that the crawl tool returned.
 
 parameters:
   - name: job_id
@@ -20,7 +21,12 @@ parameters:
     label:
       en_US: Job ID
       zh_Hans: 任务 ID
-    llm_description: The crawl job ID returned by the crawl tool.
+    human_description:
+      en_US: The crawl job ID returned by the Crawl tool.
+      zh_Hans: 由深度爬取工具返回的任务 ID。
+    llm_description: >-
+      The id returned by the crawl tool. Polling more often than every few
+      seconds does not make the job finish faster.
 
   - name: action
     type: select
@@ -30,6 +36,9 @@ parameters:
     label:
       en_US: Action
       zh_Hans: 操作
+    human_description:
+      en_US: Check the job status, or cancel a running job.
+      zh_Hans: 查询任务状态，或取消正在运行的任务。
     options:
       - value: status
         label:
@@ -39,6 +48,27 @@ parameters:
         label:
           en_US: Cancel Job
           zh_Hans: 取消任务
+
+output_schema:
+  type: object
+  properties:
+    jobId:
+      type: string
+      description: The crawl job id
+    status:
+      type: string
+      description: One of accepted, scraping, completed, failed, cancelled
+    pages:
+      type: array
+      description: The scraped pages
+      items:
+        type: object
+    total:
+      type: number
+      description: Pages discovered
+    completed:
+      type: number
+      description: Pages scraped so far
 
 extra:
   python:

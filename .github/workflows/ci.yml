@@ -14,8 +14,39 @@ jobs:
       - uses: astral-sh/setup-uv@v4
       - run: uv venv
       - run: uv pip install -r crw/requirements.txt
-      - run: uv pip install ruff
+      - run: uv pip install ruff pytest pyyaml
       - run: uv run ruff check crw/
+      # Loads the plugin exactly as the Dify runtime does, and covers the pure
+      # parameter helpers. A malformed tool yaml makes the plugin exit(1) at
+      # startup, which users only ever see as "Runtime exited with error".
+      # Needs no API key.
+      - run: uv run python -m pytest tests/test_manifest.py tests/test_params.py -v
+        working-directory: crw
+
+  marketplace:
+    # The gates the Dify Marketplace pre-check applies, run here so a submission
+    # never fails on something we could have caught ourselves.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PRIVACY.md exists and is non-empty
+        run: test -s crw/PRIVACY.md
+      - name: manifest references the privacy policy
+        run: grep -q '^privacy:' crw/manifest.yaml
+      - name: icon referenced by the manifest exists
+        run: |
+          icon=$(grep '^icon:' crw/manifest.yaml | awk '{print $2}')
+          test -f "crw/_assets/$icon"
+      - name: SDK floor is at least 0.5.0
+        run: grep -q 'dify_plugin>=0\.5' crw/requirements.txt
+      - name: README is English only, no CJK
+        run: |
+          if LC_ALL=C.UTF-8 python3 -c "import sys; sys.exit(0 if all(ord(c)<128 for c in open('crw/README.md',encoding='utf-8').read()) else 1)"; then
+            echo "README.md is ASCII"
+          else
+            echo "README.md contains non-ASCII characters; translations belong in crw/readme/" >&2
+            exit 1
+          fi
 
   integration:
     runs-on: ubuntu-latest
@@ -25,7 +56,8 @@ jobs:
       - uses: astral-sh/setup-uv@v4
       - run: uv venv
       - run: uv pip install -r crw/requirements.txt
-      - run: uv pip install pytest
-      - run: uv run python -m pytest crw/tests/ -v
+      - run: uv pip install pytest pyyaml
+      - run: uv run python -m pytest tests/ -v
+        working-directory: crw
         env:
           CRW_API_KEY: ${{ secrets.CRW_API_KEY }}

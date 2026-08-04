@@ -4,13 +4,15 @@ identity:
   label:
     en_US: Map
     zh_Hans: URL 映射
-  description:
-    human:
-      en_US: Discover all URLs on a website using link extraction and sitemap parsing.
-      zh_Hans: 通过链接提取和站点地图解析发现网站上的所有 URL。
-    llm: >-
-      Discover all URLs on a website. Combines link extraction with sitemap.xml
-      parsing to build a complete URL map.
+
+description:
+  human:
+    en_US: Discover all URLs on a website using link extraction and sitemap parsing. Returns URLs only, no page content.
+    zh_Hans: 通过链接提取和站点地图解析发现网站上的所有 URL。仅返回 URL，不含页面内容。
+  llm: >-
+    List the URLs that exist on a website, without reading any page content.
+    Use this to find the right page before scraping, or to see what sections a
+    site has. Returns URLs only.
 
 parameters:
   - name: url
@@ -20,7 +22,24 @@ parameters:
     label:
       en_US: URL
       zh_Hans: URL
-    llm_description: The website URL to discover links from. Required.
+    human_description:
+      en_US: The website URL to discover links from.
+      zh_Hans: 要发现链接的网站 URL。
+    llm_description: >-
+      Any URL on the site to map. The whole site is discovered from it, so the
+      homepage is usually the right choice.
+
+  - name: limit
+    type: number
+    required: false
+    form: form
+    min: 1
+    label:
+      en_US: Max URLs
+      zh_Hans: 最大 URL 数
+    human_description:
+      en_US: Maximum number of URLs to return. Raise it to dump large sitemaps.
+      zh_Hans: 返回 URL 的最大数量。需要导出大型站点地图时调高。
 
   - name: maxDepth
     type: number
@@ -31,6 +50,9 @@ parameters:
     label:
       en_US: Max Depth
       zh_Hans: 最大深度
+    human_description:
+      en_US: Maximum link-follow depth from the start URL.
+      zh_Hans: 从起始 URL 开始的最大链接跟随深度。
 
   - name: useSitemap
     type: boolean
@@ -43,6 +65,58 @@ parameters:
     human_description:
       en_US: Also read and parse sitemap.xml for URL discovery.
       zh_Hans: 同时读取并解析 sitemap.xml 以发现 URL。
+
+  - name: crawlFallback
+    type: boolean
+    required: false
+    form: form
+    default: true
+    label:
+      en_US: Crawl Fallback
+      zh_Hans: 爬取回退
+    human_description:
+      en_US: >-
+        After the sitemap pass, fill gaps with a short crawl. Turn off for
+        sitemap-only mode: faster, but may miss pages the sitemap omits.
+      zh_Hans: >-
+        站点地图阶段后，用短时爬取补齐遗漏。关闭则为仅站点地图模式：
+        更快，但可能遗漏站点地图未收录的页面。
+
+  - name: ignoreQueryParameters
+    type: boolean
+    required: false
+    form: form
+    label:
+      en_US: Ignore Query Parameters
+      zh_Hans: 忽略查询参数
+    human_description:
+      en_US: Strip query strings from discovered URLs so near-duplicates collapse.
+      zh_Hans: 从发现的 URL 中移除查询字符串，以合并近似重复项。
+
+  - name: timeout
+    type: number
+    required: false
+    form: form
+    min: 1
+    max: 240
+    label:
+      en_US: Timeout (s)
+      zh_Hans: 超时（秒）
+    human_description:
+      en_US: "Custom timeout in seconds, up to 240. Server default is 120."
+      zh_Hans: "自定义超时时间（秒），最大 240。服务器默认 120。"
+
+output_schema:
+  type: object
+  properties:
+    links:
+      type: array
+      description: The discovered URLs
+      items:
+        type: string
+    count:
+      type: number
+      description: Number of URLs discovered
 
 extra:
   python:

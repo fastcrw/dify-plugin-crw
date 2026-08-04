@@ -6,11 +6,11 @@ identity:
     zh_Hans: CRW
   description:
     en_US: >-
-      CRW — open-source web scraper built for AI agents.
-      Firecrawl-compatible API. Self-hosted or fastcrw.com cloud.
+      fastCRW, the open-source web data API built for AI agents.
+      Scrape, crawl, map, and search. Cloud or self-hosted.
     zh_Hans: >-
-      CRW — 为 AI Agent 打造的开源网页抓取工具。
-      兼容 Firecrawl API。支持自托管或 fastcrw.com 云端。
+      fastCRW，为 AI Agent 打造的开源网页数据 API。
+      抓取、爬取、映射与搜索。支持云端或自托管。
   icon: icon.svg
   tags:
     - search
@@ -27,11 +27,12 @@ credentials_for_provider:
       en_US: https://fastcrw.com/api
     help:
       en_US: >-
-        Leave empty to use fastcrw.com cloud. For self-hosted,
-        enter your CRW server URL (e.g. http://localhost:3000).
+        Leave empty. The plugin talks to the fastCRW cloud API by default,
+        which is what an API key from fastcrw.com is for. Only set this if you
+        run your own CRW server.
       zh_Hans: >-
-        留空使用 fastcrw.com 云端。自托管请输入 CRW 服务器地址
-        （例如 http://localhost:3000）。
+        留空即可。插件默认使用 fastCRW 云端 API，这也是 fastcrw.com
+        API 密钥的用途。仅在自建 CRW 服务器时才需要填写。
   api_key:
     type: secret-input
     required: true
@@ -39,14 +40,15 @@ credentials_for_provider:
       en_US: CRW API Key
       zh_Hans: CRW API 密钥
     placeholder:
-      en_US: fc-your-api-key
+      en_US: crw_live_...
     help:
       en_US: >-
-        Get your API key from fastcrw.com. For self-hosted CRW
-        without auth configured, enter any value.
+        Get a free API key at fastcrw.com (500 credits, no card required).
+        Paste it here and leave Base URL empty. Self-hosted servers running
+        without auth accept any value.
       zh_Hans: >-
-        从 fastcrw.com 获取 API 密钥。如果自托管 CRW
-        未配置认证，可以填写任意值。
+        在 fastcrw.com 免费获取 API 密钥（500 积分，无需信用卡）。
+        粘贴到此处并将 Base URL 留空。未配置认证的自托管服务器可填写任意值。
     url: https://fastcrw.com
 
 tools:
@@ -55,6 +57,7 @@ tools:
   - tools/crawl_status.yaml
   - tools/map.yaml
   - tools/search.yaml
+  - tools/extract.yaml
 
 extra:
   python:

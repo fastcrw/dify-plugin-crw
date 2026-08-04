@@ -1,0 +1,96 @@
+identity:
+  name: extract
+  author: us
+  label:
+    en_US: Extract
+    zh_Hans: 结构化提取
+
+description:
+  human:
+    en_US: Pull structured data from several URLs at once using an LLM, guided by a prompt or a JSON Schema.
+    zh_Hans: 使用 LLM 从多个 URL 中一次性提取结构化数据，由提示词或 JSON Schema 指导。
+  llm: >-
+    Pull the same structured fields out of several pages at once. Use this when
+    you need specific facts from a list of URLs rather than the pages themselves.
+    For a single page use scrape. Needs a paid plan.
+
+parameters:
+  - name: urls
+    type: string
+    required: true
+    form: llm
+    label:
+      en_US: URLs
+      zh_Hans: URL 列表
+    human_description:
+      en_US: "The URLs to extract from, one per line. Commas also work, but put a URL that contains a comma on its own line."
+      zh_Hans: "要提取的 URL 列表，每行一个。也支持逗号分隔，但包含逗号的 URL 请单独一行。"
+    llm_description: >-
+      The pages to extract from, one URL per line. All of them are read and the
+      results come back in the same order.
+
+  - name: prompt
+    type: string
+    required: false
+    form: llm
+    label:
+      en_US: Extraction Prompt
+      zh_Hans: 提取提示词
+    human_description:
+      en_US: Plain-language description of the data to extract.
+      zh_Hans: 用自然语言描述要提取的数据。
+    llm_description: >-
+      Plain-language description of the facts to pull from the given pages, for
+      example "the pricing tier names and their monthly cost in USD". Name the
+      fields you want.
+
+  - name: schema
+    type: string
+    required: false
+    form: llm
+    label:
+      en_US: JSON Schema
+      zh_Hans: JSON Schema
+    human_description:
+      en_US: >-
+        JSON Schema constraining the output shape. Use it when you need the exact
+        same fields back from every URL.
+      zh_Hans: >-
+        约束输出结构的 JSON Schema。当需要每个 URL 返回完全相同的字段时使用。
+    llm_description: >-
+      A JSON Schema object describing the fields to return. Supply it when the
+      result must have a fixed shape; otherwise a prompt alone is enough.
+
+output_schema:
+  type: object
+  properties:
+    results:
+      type: array
+      description: One entry per URL, with its status and extracted data
+      items:
+        type: object
+        properties:
+          url:
+            type: string
+            description: The URL this entry is for
+          status:
+            type: string
+            description: completed or failed
+          data:
+            type: object
+            description: The extracted fields
+    data:
+      type: array
+      description: Just the extracted objects, for URLs that succeeded
+      items:
+        type: object
+    status:
+      type: string
+      description: Overall job status
+    jobId:
+      type: string
+      description: Job id, only set on self-hosted servers that run extract asynchronously
+
+extra:
+  python:
+    source: tools/extract.py

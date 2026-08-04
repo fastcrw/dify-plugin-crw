@@ -4,13 +4,15 @@ identity:
   label:
     en_US: Crawl
     zh_Hans: 深度爬取
-  description:
-    human:
-      en_US: Start an async BFS crawl from a URL. Returns a job ID for status polling.
-      zh_Hans: 从 URL 开始异步 BFS 爬取。返回任务 ID 用于状态查询。
-    llm: >-
-      Start a web crawl from a given URL. Crawls pages following links up to
-      maxDepth and maxPages limits. Returns a job ID that can be polled for results.
+
+description:
+  human:
+    en_US: Read many pages of one website by following its links. Returns a job ID for status polling.
+    zh_Hans: 通过跟随链接读取一个网站的多个页面。返回用于状态查询的任务 ID。
+  llm: >-
+    Read many pages of one website by following its links. Slow and credit-heavy:
+    one credit per page. Prefer map followed by scrape when you need one specific
+    page. Returns a job id; poll it with crawl_status.
 
 parameters:
   - name: url
@@ -20,23 +22,12 @@ parameters:
     label:
       en_US: Start URL
       zh_Hans: 起始 URL
-    llm_description: The URL to start crawling from. Required.
-
-  - name: wait_for_results
-    type: boolean
-    required: false
-    form: form
-    default: true
-    label:
-      en_US: Wait For Results
-      zh_Hans: 等待爬取结果
     human_description:
-      en_US: >-
-        If true, poll until crawl completes (may take minutes for large sites).
-        If false, return job ID immediately for async polling.
-      zh_Hans: >-
-        为 true 时等待爬取完成（大型站点可能需要数分钟）。
-        为 false 时立即返回任务 ID 用于异步查询。
+      en_US: The URL to start crawling from.
+      zh_Hans: 开始爬取的 URL。
+    llm_description: >-
+      The URL to start from. Every page reachable from it, within the depth and
+      page limits, is read.
 
   - name: maxDepth
     type: number
@@ -61,8 +52,25 @@ parameters:
       en_US: Max Pages
       zh_Hans: 最大页面数
     human_description:
-      en_US: Maximum number of pages to crawl before stopping.
-      zh_Hans: 爬取的最大页面数。
+      en_US: Maximum number of pages to crawl before stopping. Each page costs one credit.
+      zh_Hans: 停止前爬取的最大页面数。每个页面消耗一个积分。
+
+  - name: wait_for_results
+    type: boolean
+    required: false
+    form: form
+    default: true
+    label:
+      en_US: Wait For Results
+      zh_Hans: 等待爬取结果
+    human_description:
+      en_US: >-
+        Wait for the crawl to finish and return the pages. If it is still running
+        after about four minutes, the job ID and the pages collected so far are
+        returned instead, so nothing is lost.
+      zh_Hans: >-
+        等待爬取完成并返回页面。若约四分钟后仍未完成，
+        则返回任务 ID 和已收集的页面，不会丢失数据。
 
   - name: formats
     type: string
@@ -72,8 +80,8 @@ parameters:
       en_US: Output Formats
       zh_Hans: 输出格式
     human_description:
-      en_US: "Comma-separated formats for each page: markdown, html, rawHtml, plainText, links"
-      zh_Hans: "逗号分隔的每页输出格式：markdown, html, rawHtml, plainText, links"
+      en_US: "Comma-separated output formats for each page. Defaults to markdown."
+      zh_Hans: "每个页面的输出格式，逗号分隔。默认 markdown。"
 
   - name: onlyMainContent
     type: boolean
@@ -83,6 +91,53 @@ parameters:
     label:
       en_US: Only Main Content
       zh_Hans: 仅主要内容
+    human_description:
+      en_US: Strip navigation, footer, sidebar, and other boilerplate.
+      zh_Hans: 去除导航栏、页脚、侧边栏等模板内容。
+
+  - name: renderJs
+    type: boolean
+    required: false
+    form: form
+    label:
+      en_US: Render JavaScript
+      zh_Hans: 渲染 JavaScript
+    human_description:
+      en_US: Force JS rendering on every page. Leave unchecked for auto-detection.
+      zh_Hans: 对每个页面强制 JS 渲染。不勾选则自动检测。
+
+  - name: waitFor
+    type: number
+    required: false
+    form: form
+    min: 0
+    label:
+      en_US: Wait (ms)
+      zh_Hans: 等待时间（毫秒）
+    human_description:
+      en_US: Milliseconds to wait after JS rendering on each page.
+      zh_Hans: 每个页面 JS 渲染后等待的毫秒数。
+
+output_schema:
+  type: object
+  properties:
+    jobId:
+      type: string
+      description: The crawl job id, usable with the crawl_status tool
+    status:
+      type: string
+      description: One of accepted, scraping, completed, failed, cancelled
+    pages:
+      type: array
+      description: The scraped pages
+      items:
+        type: object
+    total:
+      type: number
+      description: Pages discovered
+    completed:
+      type: number
+      description: Pages scraped so far
 
 extra:
   python:

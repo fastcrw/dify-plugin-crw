@@ -1,94 +1,86 @@
-# CRW — Dify Tool Plugin
+# fastCRW Dify Tool Plugin
 
-Web scraping, crawling, and URL mapping for Dify workflows and agents.
+Web scraping, crawling, URL mapping, search, and structured extraction for Dify
+workflows and agents.
 
-CRW is an open-source web scraper built for AI agents. Firecrawl-compatible API, 5.5x faster, 75x less memory. Works with fastcrw.com cloud or any self-hosted CRW instance.
+fastCRW is the open-source web data API built for AI agents. Point it at the
+fastcrw.com cloud with an API key, or self-host the single 8 MB binary.
+
+Source: https://github.com/us/dify-plugin-crw
 
 ## Tools
 
 | Tool | Endpoint | Description |
 |------|----------|-------------|
-| **Scrape** | `POST /v1/scrape` | Scrape a single URL and return clean markdown, HTML, plain text, or structured JSON |
-| **Crawl** | `POST /v1/crawl` | Start an async BFS crawl with depth and page limits |
-| **Crawl Status** | `GET /v1/crawl/{id}` | Check crawl job status or cancel a running job |
-| **Map** | `POST /v1/map` | Discover all URLs on a website via link extraction and sitemap parsing |
+| **Scrape** | `POST /v1/scrape` | Read one page as markdown, HTML, plain text, links, or structured JSON |
+| **Crawl** | `POST /v1/crawl` | Read many pages of a site by following links |
+| **Crawl Status** | `GET /v1/crawl/{id}` | Check or cancel a crawl job |
+| **Map** | `POST /v1/map` | Discover every URL on a site, without reading page content |
+| **Search** | `POST /v1/search` | Search the web, optionally scraping results or synthesising an answer |
+| **Extract** | `POST /v1/extract` | Pull the same structured fields from several URLs at once |
+
+Every tool declares an `output_schema`, so its outputs appear as named variables
+in the Dify variable picker instead of raw JSON you have to path into by hand.
 
 ## Setup
 
-### 1. Install the Plugin
+### 1. Install the plugin
 
-Install from the Dify Marketplace, or load locally during development:
+Install from the Dify Marketplace, or build it locally:
 
 ```bash
-# Package the plugin
 dify plugin package ./crw
-
-# Install the .difypkg file via Dify Settings > Plugins
 ```
 
-### 2. Configure Credentials — Pick One
+Then install the resulting `.difypkg` from Dify Settings > Plugins.
 
-#### Option A: Cloud ([fastcrw.com](https://fastcrw.com)) — Quickest Start
+### 2. Configure credentials
 
-[Sign up at fastcrw.com](https://fastcrw.com) and get **500 free credits**:
+#### Recommended: fastcrw.com cloud
 
-- **API Key:** `crw_live_...` from fastcrw.com
-- **Base URL:** *(leave empty — defaults to fastcrw.com)*
+[Sign up at fastcrw.com](https://fastcrw.com) for **500 free credits**, no card
+required.
 
-#### Option B: Self-hosted with binary (free, no limits)
+- **API Key:** your `crw_live_...` key
+- **Base URL:** leave empty, it defaults to `https://fastcrw.com/api`
+
+#### Alternative: self-host
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/us/crw/main/install.sh | bash
-crw  # starts on http://localhost:3000
+curl -fsSL https://fastcrw.com/install | sh
+crw serve
 ```
 
-- **API Key:** `any-value` (or leave empty if no auth)
-- **Base URL:** `http://localhost:3000`
+- **API Key:** any value, if your server runs without auth
+- **Base URL:** your server, for example `http://localhost:3000`
 
-#### Option C: Self-hosted with Docker
+Search needs a cloud key. Extract works on both, and the plugin handles the
+difference for you: the cloud runs it synchronously, a self-hosted server runs it
+as a job and the tool polls until it finishes.
 
-```bash
-docker run -d -p 3000:3000 ghcr.io/us/crw:latest
-```
+On the cloud, Extract needs a paid plan, as do the LLM-backed options (`summary`
+format, prompt or JSON Schema extraction, and search `answer` /
+`summarizeResults`).
 
-Same as Option B.
+## Notes
 
-## Tool Details
-
-### Scrape
-
-Extract clean content from a single URL. Supports:
-- Multiple output formats: markdown, HTML, rawHtml, plainText, links, JSON
-- JavaScript rendering with configurable wait time
-- CSS selectors and XPath for targeted extraction
-- Include/exclude tag filters
-- Custom HTTP headers
-- Stealth mode (browser-like headers, UA rotation)
-- Per-request proxy
-- LLM-based structured extraction via JSON Schema
-
-### Crawl
-
-Start an async breadth-first crawl from a URL:
-- Configurable max depth and max pages
-- Sync mode (wait for completion) or async mode (return job ID)
-- Poll for results using the Crawl Status tool
-
-### Crawl Status
-
-Check on or cancel a running crawl job:
-- Returns current status, total pages, completed pages
-- Cancel action stops the crawl immediately
-
-### Map
-
-Discover all URLs on a website:
-- Combines link extraction with sitemap.xml parsing
-- Configurable crawl depth
-- Returns a complete list of discovered URLs
+- **Credits.** One credit per page. A crawl of 100 pages costs 100 credits.
+  Turning on `scrapeResults` in Search costs one credit per result.
+- **Long crawls.** Crawl waits for results by default. If the job is still
+  running after about four minutes it returns the job ID plus the pages
+  collected so far, so nothing is lost. Poll it with the Crawl Status tool.
+- **Agent use.** Parameters an agent should choose from the user's question
+  (URL, query, formats, time filter, language, sources, categories) are exposed
+  to the model. Parameters that spend credits or configure the environment are
+  operator-set on the node.
+- **Domain scoping in Search.** There is no `includeDomains` parameter; use the
+  `site:` operator in the query, for example `site:docs.python.org asyncio`.
+- **Crawl path filters.** Unlike some other crawlers, fastCRW's crawl API has no
+  `includePaths` / `excludePaths`. Use Map to list URLs, filter them in your
+  workflow, then Scrape the ones you want.
 
 ## Links
 
-- [CRW GitHub](https://github.com/us/crw)
-- [fastcrw.com](https://fastcrw.com)
-- [Dify Plugin Development Guide](https://docs.dify.ai/en/develop-plugin/dev-guides-and-walkthroughs/tool-plugin)
+- [fastCRW](https://fastcrw.com)
+- [fastCRW engine on GitHub](https://github.com/us/crw)
+- [API docs](https://docs.fastcrw.com)
