@@ -48,3 +48,28 @@ def test_every_tool_declares_output_schema() -> None:
         with open(os.path.join(PLUGIN_ROOT, "tools", path)) as fh:
             spec = yaml.safe_load(fh)
         assert spec.get("output_schema", {}).get("properties"), path
+
+
+def test_no_tool_declares_a_reserved_variable_name() -> None:
+    """Dify reserves `json`, `text` and `files` as tool variable names and fails
+    the whole workflow node if a plugin emits one. Only a real Dify run surfaces
+    this, so guard it here.
+    """
+    import re
+
+    import yaml
+
+    reserved = {"json", "text", "files"}
+    tools_dir = os.path.join(PLUGIN_ROOT, "tools")
+    for name in sorted(os.listdir(tools_dir)):
+        if name.endswith(".yaml"):
+            with open(os.path.join(tools_dir, name)) as fh:
+                spec = yaml.safe_load(fh)
+            declared = set((spec.get("output_schema") or {}).get("properties", {}))
+            assert not declared & reserved, f"{name} declares {declared & reserved}"
+        elif name.endswith(".py"):
+            with open(os.path.join(tools_dir, name)) as fh:
+                emitted = set(
+                    re.findall(r'create_variable_message\(\s*"([^"]+)"', fh.read())
+                )
+            assert not emitted & reserved, f"{name} emits {emitted & reserved}"
