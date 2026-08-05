@@ -192,9 +192,11 @@ output_schema:
       description: URLs found on the page, when the links format was requested
       items:
         type: string
-    json:
+    extracted:
       type: object
-      description: Structured extraction result, when jsonSchema or prompt was used
+      description: >-
+        Structured extraction result, when jsonSchema or prompt was used. Named
+        `extracted` because Dify reserves the variable name `json`.
     summary:
       type: string
       description: LLM summary of the page, when the summary format was requested

@@ -68,8 +68,14 @@ class ScrapeTool(Tool):
         yield self.create_variable_message("markdown", markdown)
         yield self.create_variable_message("html", data.get("html") or "")
         yield self.create_variable_message("links", data.get("links") or [])
-        yield self.create_variable_message("json", data.get("json"))
+        # Named `extracted`, not `json`: Dify reserves the variable names json,
+        # text and files, and emitting one fails the whole workflow node.
+        # Never emit None either, for the same reason: an unrequested format
+        # comes back as the empty value of its declared type.
+        yield self.create_variable_message("extracted", data.get("json") or {})
         yield self.create_variable_message("summary", data.get("summary") or "")
         yield self.create_variable_message("title", metadata.get("title") or "")
         yield self.create_variable_message("sourceUrl", metadata.get("sourceURL") or "")
-        yield self.create_variable_message("statusCode", metadata.get("statusCode"))
+        yield self.create_variable_message(
+            "statusCode", metadata.get("statusCode") or 0
+        )
