@@ -38,8 +38,10 @@ jobs:
         run: |
           icon=$(grep '^icon:' crw/manifest.yaml | awk '{print $2}')
           test -f "crw/_assets/$icon"
-      - name: SDK floor is at least 0.5.0
-        run: grep -q 'dify_plugin>=0\.5' crw/requirements.txt
+      # The marketplace reviewer enforces >= 0.9.0, above what the
+      # pre-check workflow file itself states.
+      - name: SDK floor is at least 0.9.0
+        run: grep -q 'dify_plugin>=0\.9' crw/requirements.txt
       - name: README is English only, no CJK
         run: |
           if LC_ALL=C.UTF-8 python3 -c "import sys; sys.exit(0 if all(ord(c)<128 for c in open('crw/README.md',encoding='utf-8').read()) else 1)"; then
