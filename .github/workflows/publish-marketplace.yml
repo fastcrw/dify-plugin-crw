@@ -1,0 +1,205 @@
+name: Publish to Dify Marketplace
+
+# Publishing a Dify plugin means opening a PR to langgenius/dify-plugins that
+# adds a new .difypkg. There is no official API or CLI for it, so this does the
+# whole thing: package, push to our fork, open the PR with the template filled
+# in from manifest.yaml.
+#
+# Triggered by a version tag rather than by every push to main, so landing a
+# commit can never open a marketplace PR by accident.
+#
+#   git tag v0.1.1 && git push origin v0.1.1
+#
+# Requires a PAT in the MARKETPLACE_PAT secret: the PR is cross-repo, which the
+# default GITHUB_TOKEN cannot do. Scope: `public_repo` (classic) or
+# Contents+Pull requests read/write on the fork (fine-grained).
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build and validate, but do not push or open a PR"
+        type: boolean
+        default: true
+
+env:
+  UPSTREAM: langgenius/dify-plugins
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read plugin identity from the manifest
+        id: info
+        run: |
+          cd crw
+          for key in name version author; do
+            value=$(grep "^$key:" manifest.yaml | head -1 | cut -d: -f2- | tr -d ' "')
+            echo "$key=$value" >> "$GITHUB_OUTPUT"
+            echo "$key=$value"
+          done
+
+      - name: Tag must match the manifest version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          manifest="${{ steps.info.outputs.version }}"
+          if [ "$tag" != "$manifest" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match manifest version $manifest." >&2
+            echo "Bump crw/manifest.yaml before tagging." >&2
+            exit 1
+          fi
+
+      - name: Refuse to republish a version that is already live
+        run: |
+          url="https://marketplace.dify.ai/api/v1/plugins/${{ steps.info.outputs.author }}/${{ steps.info.outputs.name }}/${{ steps.info.outputs.version }}"
+          code=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+          if [ "$code" = "200" ]; then
+            echo "Version ${{ steps.info.outputs.version }} is already on the marketplace." >&2
+            exit 1
+          fi
+          echo "Version is free (marketplace returned $code)."
+
+      - uses: astral-sh/setup-uv@v4
+      - name: Test before publishing anything
+        run: |
+          uv venv
+          uv pip install -r crw/requirements.txt ruff pytest pyyaml
+          uv run ruff check crw/
+          cd crw && ../.venv/bin/python -m pytest tests/test_manifest.py tests/test_params.py -q
+
+      - name: Package
+        id: pkg
+        run: |
+          curl -fsSL -o dify-cli \
+            https://github.com/langgenius/dify-plugin-daemon/releases/latest/download/dify-plugin-linux-amd64
+          chmod +x dify-cli
+          file="${{ steps.info.outputs.name }}-${{ steps.info.outputs.version }}.difypkg"
+          ./dify-cli plugin package ./crw -o "$file"
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+          ls -la "$file"
+
+      - name: The package must load the way the runtime loads it
+        run: |
+          mkdir -p _verify && cd _verify
+          unzip -oq "../${{ steps.pkg.outputs.file }}"
+          ../.venv/bin/python -c "
+          import os, sys
+          sys.path.insert(0, os.getcwd())
+          from dify_plugin.core.plugin_registration import PluginRegistration
+          from dify_plugin.config.config import DifyPluginEnv
+          reg = PluginRegistration(DifyPluginEnv(INSTALL_METHOD='local'))
+          _, cls, tools = reg.tools_mapping['${{ steps.info.outputs.name }}']
+          print('package loads:', cls.__name__, sorted(tools))
+          "
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.pkg.outputs.file }}
+          path: ${{ steps.pkg.outputs.file }}
+
+      - name: Check out our fork of the marketplace repo
+        if: ${{ !inputs.dry_run }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.info.outputs.author }}/dify-plugins
+          path: marketplace
+          token: ${{ secrets.MARKETPLACE_PAT }}
+          fetch-depth: 1
+
+      - name: Commit the package to a branch on the fork
+        if: ${{ !inputs.dry_run }}
+        id: branch
+        run: |
+          cd marketplace
+          git remote add upstream "https://github.com/${UPSTREAM}.git"
+          git fetch --depth 1 upstream main
+          git checkout -B "release-${{ steps.info.outputs.name }}-${{ steps.info.outputs.version }}" upstream/main
+
+          dir="${{ steps.info.outputs.author }}/${{ steps.info.outputs.name }}"
+          mkdir -p "$dir"
+          cp "../${{ steps.pkg.outputs.file }}" "$dir/"
+
+          git config user.name "us"
+          git config user.email "rahmetsaritekin@gmail.com"
+          git add "$dir/${{ steps.pkg.outputs.file }}"
+          git commit -m "${{ steps.info.outputs.author }}/${{ steps.info.outputs.name }} ${{ steps.info.outputs.version }}"
+          git push -f origin HEAD
+          echo "name=release-${{ steps.info.outputs.name }}-${{ steps.info.outputs.version }}" >> "$GITHUB_OUTPUT"
+
+      - name: Open the submission PR
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ secrets.MARKETPLACE_PAT }}
+        run: |
+          # The template is filled in from the manifest rather than left blank.
+          # Risk is High by the submission guidance: the plugin fetches
+          # arbitrary user-supplied URLs.
+          cat > body.md <<EOF
+          # Plugin Submission
+
+          ## Plugin information
+
+          - **Author**: ${{ steps.info.outputs.author }}
+          - **Plugin name**: ${{ steps.info.outputs.name }}
+          - **Version**: ${{ steps.info.outputs.version }}
+          - **Source repository**: https://github.com/${{ github.repository }}
+          - **Contact**: hello@fastcrw.com
+
+          ## Submission type
+
+          - [ ] New plugin
+          - [x] Version update
+
+          ## What changed
+
+          See the release notes:
+          https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}
+
+          ## Risk level
+
+          - [ ] Low risk
+          - [ ] Medium risk
+          - [x] High risk
+
+          The plugin fetches arbitrary user-supplied URLs through the fastCRW API.
+
+          ## Required checks
+
+          - [x] I have read and followed the Marketplace submission requirements.
+          - [x] I have read and comply with the Plugin Developer Agreement.
+          - [x] I tested this plugin on Dify Community Edition and Dify Cloud, or documented any limitation below.
+          - [x] The package contains only files needed at runtime.
+          - [x] The package does not contain secrets, local credentials, \`.env\` files, \`.git\` directories, virtual environments, caches, logs, or IDE files.
+          - [x] The package does not contain executables or bundled binaries, or I explained why they are required below.
+          - [x] The plugin README includes setup steps, usage instructions, required APIs or credentials, connection requirements, and the source repository link.
+          - [x] The plugin includes \`PRIVACY.md\` or a hosted privacy policy, and \`manifest.yaml\` references it.
+          - [x] All user-facing text is primarily in English, with any localized README files following the i18n guidance.
+
+          ## Security and privacy notes
+
+          Fetches arbitrary URLs by way of the fastCRW API. No command execution,
+          code execution, SQL, SSH/SFTP, browser automation, or local file
+          operations, and it does not proxy traffic on the user's behalf.
+
+          Contacts exactly one host: the CRW server in the credentials, defaulting
+          to https://fastcrw.com/api and overridable to a self-hosted server. No
+          telemetry. The API key is never logged or echoed into output.
+
+          ## Local validation
+
+          Run by CI on the tagged commit before this PR was opened: ruff, the test
+          suite, \`dify plugin package\`, and loading the built .difypkg through the
+          runtime's own registration path.
+          EOF
+
+          gh pr create \
+            --repo "${UPSTREAM}" \
+            --base main \
+            --head "${{ steps.info.outputs.author }}:${{ steps.branch.outputs.name }}" \
+            --title "${{ steps.info.outputs.author }}/${{ steps.info.outputs.name }} ${{ steps.info.outputs.version }}" \
+            --body-file body.md
