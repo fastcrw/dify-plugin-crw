@@ -6,7 +6,7 @@ workflows and agents.
 fastCRW is the open-source web data API built for AI agents. Point it at the
 fastcrw.com cloud with an API key, or self-host the single 8 MB binary.
 
-Source: https://github.com/us/dify-plugin-crw
+Source: https://github.com/fastcrw/dify-plugin-crw
 
 ## Tools
 
@@ -82,5 +82,5 @@ format, prompt or JSON Schema extraction, and search `answer` /
 ## Links
 
 - [fastCRW](https://fastcrw.com)
-- [fastCRW engine on GitHub](https://github.com/us/crw)
+- [fastCRW engine on GitHub](https://github.com/fastcrw/crw)
 - [API docs](https://docs.fastcrw.com)
