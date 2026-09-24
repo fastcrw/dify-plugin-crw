@@ -14,7 +14,7 @@ label:
   en_US: fastCRW
   zh_Hans: fastCRW
 privacy: PRIVACY.md
-repo: https://github.com/us/dify-plugin-crw
+repo: https://github.com/fastcrw/dify-plugin-crw
 meta:
   arch:
     - amd64

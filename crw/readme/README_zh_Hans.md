@@ -5,7 +5,7 @@
 fastCRW 是为 AI Agent 打造的开源网页数据 API。使用 API 密钥连接 fastcrw.com 云端，
 或自托管仅 8 MB 的单一二进制文件。
 
-源码：https://github.com/us/dify-plugin-crw
+源码：https://github.com/fastcrw/dify-plugin-crw
 
 ## 工具
 
@@ -77,5 +77,5 @@ Search 需要云端密钥。Extract 两者都支持，插件会自动处理差�
 ## 链接
 
 - [fastCRW](https://fastcrw.com)
-- [fastCRW 引擎（GitHub）](https://github.com/us/crw)
+- [fastCRW 引擎（GitHub）](https://github.com/fastcrw/crw)
 - [API 文档](https://docs.fastcrw.com)
